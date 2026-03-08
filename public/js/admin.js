@@ -263,7 +263,6 @@
     tbody.innerHTML = filtered.map(link => `
       <tr draggable="true" data-id="${link.id}" data-type="links">
         <td class="drag-handle" style="cursor:grab;color:var(--text-muted);">≡</td>
-        <td>${link.icon || '🔗'}</td>
         <td>${escapeHtml(link.title_zh)}</td>
         <td>${escapeHtml(link.title_en)}</td>
         <td>${escapeHtml(link.category_name_zh || '-')}</td>
@@ -299,7 +298,7 @@
         url: document.getElementById('linkUrl').value,
         description_zh: document.getElementById('linkDescZh').value,
         description_en: document.getElementById('linkDescEn').value,
-        icon: document.getElementById('linkIcon').value || '',
+        icon: '', // 不再使用手动填写的图标
         sort_order: parseInt(document.getElementById('linkSortOrder').value) || 0,
       };
       try {
@@ -316,7 +315,6 @@
     if (!link) return;
     document.getElementById('linkModalTitle').textContent = '编辑链接';
     document.getElementById('linkId').value = link.id;
-    document.getElementById('linkIcon').value = link.icon;
     document.getElementById('linkTitleZh').value = link.title_zh;
     document.getElementById('linkTitleEn').value = link.title_en;
     document.getElementById('linkUrl').value = link.url;

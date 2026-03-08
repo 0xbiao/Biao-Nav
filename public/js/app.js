@@ -8,11 +8,10 @@
   // 存储导航数据
   let navData = { categories: [], settings: {} };
   let currentCategory = 'all';
-  let currentEngine = localStorage.getItem('biao-nav-engine') || 'local';
+  let currentEngine = localStorage.getItem('biao-nav-engine') || 'google';
 
   // 搜索引擎配置
   const SEARCH_ENGINES = {
-    local: { icon: '🔍', url: null },
     google: { icon: '🌐', url: 'https://www.google.com/search?q=' },
     bing: { icon: '🔷', url: 'https://www.bing.com/search?q=' },
     baidu: { icon: '🅱️', url: 'https://www.baidu.com/s?wd=' },
@@ -56,18 +55,9 @@
     const searchInput = document.getElementById('searchInput');
     if (!searchInput) return;
 
-    let debounceTimer;
-    searchInput.addEventListener('input', () => {
-      if (currentEngine !== 'local') return; // 外部搜索不过滤
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => {
-        renderNavGrid();
-      }, 200);
-    });
-
     // 回车触发外部搜索
     searchInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && currentEngine !== 'local') {
+      if (e.key === 'Enter') {
         const query = searchInput.value.trim();
         if (query) {
           window.open(SEARCH_ENGINES[currentEngine].url + encodeURIComponent(query), '_blank');
@@ -88,6 +78,17 @@
       item.classList.toggle('active', item.dataset.engine === currentEngine);
     });
 
+    // 初始设置 Placeholder
+    const updatePlaceholder = (item) => {
+      const searchInput = document.getElementById('searchInput');
+      const engineName = item.textContent.trim().split(' ').pop();
+      searchInput.placeholder = t('searchWith').replace('{engine}', engineName);
+    };
+
+    // 初始化时调用一次
+    const activeItem = Array.from(dropdown.querySelectorAll('.search-engine-item')).find(i => i.dataset.engine === currentEngine);
+    if (activeItem) updatePlaceholder(activeItem);
+
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       dropdown.classList.toggle('active');
@@ -102,15 +103,7 @@
       dropdown.querySelectorAll('.search-engine-item').forEach(i => i.classList.remove('active'));
       item.classList.add('active');
       dropdown.classList.remove('active');
-
-      // 更新 placeholder
-      const searchInput = document.getElementById('searchInput');
-      if (currentEngine === 'local') {
-        searchInput.placeholder = t('searchPlaceholder');
-      } else {
-        const engineName = item.textContent.trim().split(' ').pop();
-        searchInput.placeholder = t('searchWith').replace('{engine}', engineName);
-      }
+      updatePlaceholder(item);
     });
 
     document.addEventListener('click', (e) => {
@@ -223,9 +216,6 @@
   // ========== 渲染导航网格 ==========
   function renderNavGrid() {
     const grid = document.getElementById('navGrid');
-    const searchInput = document.getElementById('searchInput');
-    const searchTerm = searchInput?.value?.toLowerCase()?.trim() || '';
-
     if (!grid) return;
     grid.innerHTML = '';
 
@@ -236,15 +226,8 @@
       // 分类过滤
       if (currentCategory !== 'all' && String(cat.id) !== currentCategory) return;
 
-      // 过滤链接
-      const filteredLinks = (cat.links || []).filter(link => {
-        if (!searchTerm || currentEngine !== 'local') return true;
-        const title = (link[langField('title')] || link.title_zh || '').toLowerCase();
-        const desc = (link[langField('description')] || link.description_zh || '').toLowerCase();
-        const url = (link.url || '').toLowerCase();
-        return title.includes(searchTerm) || desc.includes(searchTerm) || url.includes(searchTerm);
-      });
-
+      // 如果当前分类下没有链接则跳过
+      const filteredLinks = cat.links || [];
       if (filteredLinks.length === 0) return;
       hasResults = true;
 

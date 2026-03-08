@@ -1,0 +1,198 @@
+/* ============================================
+   Biao-Nav 多主题 + 多配色系统
+   主题通过 data-theme 属性控制
+   配色通过 data-accent 属性控制
+   ============================================ */
+
+/* ===== 暗夜主题 (Dark) - 默认 ===== */
+[data-theme="dark"], :root {
+  --bg-primary: #0a0a0f;
+  --bg-header: rgba(10, 10, 15, 0.8);
+  --bg-card: rgba(255, 255, 255, 0.05);
+  --bg-input: rgba(255, 255, 255, 0.08);
+  --bg-hover: rgba(255, 255, 255, 0.1);
+  --bg-icon: rgba(255, 255, 255, 0.08);
+  --text-primary: #e8e8ed;
+  --text-secondary: #a0a0b0;
+  --text-muted: #6a6a7a;
+  --border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ===== 明亮主题 (Light) ===== */
+[data-theme="light"] {
+  --bg-primary: #f5f5f7;
+  --bg-header: rgba(245, 245, 247, 0.85);
+  --bg-card: rgba(255, 255, 255, 0.8);
+  --bg-input: rgba(0, 0, 0, 0.04);
+  --bg-hover: rgba(0, 0, 0, 0.06);
+  --bg-icon: rgba(0, 0, 0, 0.05);
+  --text-primary: #1a1a2e;
+  --text-secondary: #555570;
+  --text-muted: #8888a0;
+  --border-color: rgba(0, 0, 0, 0.1);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 30px rgba(0,0,0,0.1);
+}
+
+[data-theme="light"] .bg-gradient .orb {
+  opacity: 0.15;
+}
+
+/* ===== 极光主题 (Aurora) ===== */
+[data-theme="aurora"] {
+  --bg-primary: #050510;
+  --bg-header: rgba(5, 5, 16, 0.85);
+  --bg-card: rgba(255, 255, 255, 0.04);
+  --bg-input: rgba(255, 255, 255, 0.06);
+  --bg-hover: rgba(255, 255, 255, 0.08);
+  --bg-icon: rgba(255, 255, 255, 0.06);
+  --text-primary: #e0e8f0;
+  --text-secondary: #8898b0;
+  --text-muted: #5a6a80;
+  --border-color: rgba(100, 200, 255, 0.1);
+}
+
+[data-theme="aurora"] .bg-gradient .orb {
+  opacity: 0.5;
+  filter: blur(100px);
+}
+
+[data-theme="aurora"] .bg-gradient .orb:nth-child(1) {
+  background: #00ff87;
+}
+
+[data-theme="aurora"] .bg-gradient .orb:nth-child(2) {
+  background: #60efff;
+}
+
+[data-theme="aurora"] .bg-gradient .orb:nth-child(3) {
+  background: #c850ff;
+}
+
+/* ===== 自然主题 (Nature) ===== */
+[data-theme="nature"] {
+  --bg-primary: #0d1a0d;
+  --bg-header: rgba(13, 26, 13, 0.85);
+  --bg-card: rgba(255, 255, 255, 0.04);
+  --bg-input: rgba(255, 255, 255, 0.06);
+  --bg-hover: rgba(255, 255, 255, 0.08);
+  --bg-icon: rgba(200, 255, 200, 0.06);
+  --text-primary: #d0e8d0;
+  --text-secondary: #80a880;
+  --text-muted: #507050;
+  --border-color: rgba(100, 180, 100, 0.15);
+}
+
+[data-theme="nature"] .bg-gradient .orb:nth-child(1) {
+  background: #34d399;
+}
+
+[data-theme="nature"] .bg-gradient .orb:nth-child(2) {
+  background: #059669;
+}
+
+[data-theme="nature"] .bg-gradient .orb:nth-child(3) {
+  background: #a7f3d0;
+}
+
+/* ===== 赛博主题 (Cyber) ===== */
+[data-theme="cyber"] {
+  --bg-primary: #0a0015;
+  --bg-header: rgba(10, 0, 21, 0.85);
+  --bg-card: rgba(255, 255, 255, 0.03);
+  --bg-input: rgba(255, 255, 255, 0.05);
+  --bg-hover: rgba(255, 255, 255, 0.07);
+  --bg-icon: rgba(200, 100, 255, 0.08);
+  --text-primary: #e0d0f0;
+  --text-secondary: #9080b0;
+  --text-muted: #605080;
+  --border-color: rgba(180, 100, 255, 0.15);
+}
+
+[data-theme="cyber"] .nav-card {
+  border: 1px solid rgba(180, 100, 255, 0.2);
+}
+
+[data-theme="cyber"] .nav-card:hover {
+  box-shadow: var(--shadow-lg), 0 0 40px rgba(180, 100, 255, 0.15), inset 0 0 30px rgba(180, 100, 255, 0.05);
+}
+
+[data-theme="cyber"] .bg-gradient .orb:nth-child(1) {
+  background: #a855f7;
+}
+
+[data-theme="cyber"] .bg-gradient .orb:nth-child(2) {
+  background: #ec4899;
+}
+
+[data-theme="cyber"] .bg-gradient .orb:nth-child(3) {
+  background: #6366f1;
+}
+
+/* ========================================
+   配色方案 (Accent Colors)
+   ======================================== */
+
+/* 海洋蓝 (Ocean) - 默认 */
+[data-accent="ocean"], :root {
+  --accent-primary: #3b82f6;
+  --accent-secondary: #06b6d4;
+  --accent-tertiary: #8b5cf6;
+  --accent-glow: rgba(59, 130, 246, 0.2);
+}
+
+/* 火焰橙 (Flame) */
+[data-accent="flame"] {
+  --accent-primary: #f97316;
+  --accent-secondary: #ef4444;
+  --accent-tertiary: #eab308;
+  --accent-glow: rgba(249, 115, 22, 0.2);
+}
+
+/* 翡翠绿 (Emerald) */
+[data-accent="emerald"] {
+  --accent-primary: #10b981;
+  --accent-secondary: #14b8a6;
+  --accent-tertiary: #84cc16;
+  --accent-glow: rgba(16, 185, 129, 0.2);
+}
+
+/* 紫罗兰 (Violet) */
+[data-accent="violet"] {
+  --accent-primary: #8b5cf6;
+  --accent-secondary: #a855f7;
+  --accent-tertiary: #ec4899;
+  --accent-glow: rgba(139, 92, 246, 0.2);
+}
+
+/* 玫瑰金 (Rose) */
+[data-accent="rose"] {
+  --accent-primary: #f43f5e;
+  --accent-secondary: #ec4899;
+  --accent-tertiary: #f97316;
+  --accent-glow: rgba(244, 63, 94, 0.2);
+}
+
+/* 冰川灰 (Glacier) */
+[data-accent="glacier"] {
+  --accent-primary: #64748b;
+  --accent-secondary: #94a3b8;
+  --accent-tertiary: #475569;
+  --accent-glow: rgba(100, 116, 139, 0.2);
+}
+
+/* === 配色色板预览色值 === */
+.accent-option[data-value="ocean"] { background: linear-gradient(135deg, #3b82f6, #06b6d4); }
+.accent-option[data-value="flame"] { background: linear-gradient(135deg, #f97316, #ef4444); }
+.accent-option[data-value="emerald"] { background: linear-gradient(135deg, #10b981, #84cc16); }
+.accent-option[data-value="violet"] { background: linear-gradient(135deg, #8b5cf6, #ec4899); }
+.accent-option[data-value="rose"] { background: linear-gradient(135deg, #f43f5e, #f97316); }
+.accent-option[data-value="glacier"] { background: linear-gradient(135deg, #64748b, #94a3b8); }
+
+/* === 主题色板预览色值 === */
+.theme-option[data-value="dark"] .swatch { background: linear-gradient(135deg, #0a0a0f, #1a1a2e); }
+.theme-option[data-value="light"] .swatch { background: linear-gradient(135deg, #f5f5f7, #e8e8ed); }
+.theme-option[data-value="aurora"] .swatch { background: linear-gradient(135deg, #050510, #00ff87 60%, #60efff); }
+.theme-option[data-value="nature"] .swatch { background: linear-gradient(135deg, #0d1a0d, #34d399); }
+.theme-option[data-value="cyber"] .swatch { background: linear-gradient(135deg, #0a0015, #a855f7 60%, #ec4899); }

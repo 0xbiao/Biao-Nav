@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark" data-accent="ocean">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Biao导航 - 管理后台</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>">
+  <link rel="stylesheet" href="css/themes.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <!-- 动态背景 -->
+  <div class="bg-gradient">
+    <div class="orb"></div>
+    <div class="orb"></div>
+    <div class="orb"></div>
+  </div>
+
+  <!-- ==================== 登录界面 ==================== -->
+  <div id="loginView" class="login-container">
+    <div class="login-card">
+      <span class="logo-icon">🔐</span>
+      <h1>管理后台</h1>
+      <p>请输入管理员密码以继续</p>
+      <form id="loginForm">
+        <div class="form-group">
+          <input type="password" class="form-input" id="loginPassword" placeholder="输入管理员密码" required autofocus>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" id="loginBtn">登 录</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== 管理界面 ==================== -->
+  <div id="adminView" class="admin-layout" style="display:none;">
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <span>🧭</span>
+        <span>Biao导航</span>
+      </div>
+      <ul class="sidebar-nav">
+        <li><a href="#dashboard" class="nav-link active" data-page="dashboard">📊 仪表盘</a></li>
+        <li><a href="#categories" class="nav-link" data-page="categories">📁 分类管理</a></li>
+        <li><a href="#links" class="nav-link" data-page="links">🔗 链接管理</a></li>
+      </ul>
+      <div class="sidebar-footer">
+        <button class="btn btn-secondary btn-block btn-sm" id="logoutBtn">🚪 退出登录</button>
+        <a href="index.html" class="btn btn-secondary btn-block btn-sm" style="margin-top:8px;">🏠 返回首页</a>
+      </div>
+    </aside>
+
+    <!-- 主内容区 -->
+    <div class="admin-main">
+
+      <!-- 仪表盘 -->
+      <div id="page-dashboard" class="page-section active">
+        <div class="admin-header">
+          <h2>📊 仪表盘</h2>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-card-icon">📁</div>
+            <div class="stat-card-value" id="statCategories">0</div>
+            <div class="stat-card-label">分类数量</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon">🔗</div>
+            <div class="stat-card-value" id="statLinks">0</div>
+            <div class="stat-card-label">链接数量</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 分类管理 -->
+      <div id="page-categories" class="page-section">
+        <div class="admin-header">
+          <h2>📁 分类管理</h2>
+          <button class="btn btn-primary" id="addCategoryBtn">+ 新增分类</button>
+        </div>
+        <table class="data-table" id="categoriesTable">
+          <thead>
+            <tr>
+              <th>图标</th>
+              <th>中文名</th>
+              <th>英文名</th>
+              <th>排序</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="categoriesBody"></tbody>
+        </table>
+      </div>
+
+      <!-- 链接管理 -->
+      <div id="page-links" class="page-section">
+        <div class="admin-header">
+          <h2>🔗 链接管理</h2>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <select class="form-input" id="linkCategoryFilter" style="width:auto;min-width:150px;">
+              <option value="">全部分类</option>
+            </select>
+            <button class="btn btn-primary" id="addLinkBtn">+ 新增链接</button>
+          </div>
+        </div>
+        <table class="data-table" id="linksTable">
+          <thead>
+            <tr>
+              <th>图标</th>
+              <th>中文标题</th>
+              <th>英文标题</th>
+              <th>分类</th>
+              <th>URL</th>
+              <th>排序</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="linksBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 分类编辑弹窗 ==================== -->
+  <div class="modal-overlay" id="categoryModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="categoryModalTitle">新增分类</h3>
+        <button class="modal-close" onclick="closeCategoryModal()">✕</button>
+      </div>
+      <form id="categoryForm">
+        <input type="hidden" id="categoryId">
+        <div class="form-group">
+          <label>图标 (Emoji)</label>
+          <input type="text" class="form-input" id="categoryIcon" placeholder="📁" maxlength="4">
+        </div>
+        <div class="form-group">
+          <label>中文名称 *</label>
+          <input type="text" class="form-input" id="categoryNameZh" placeholder="例：开发工具" required>
+        </div>
+        <div class="form-group">
+          <label>英文名称 *</label>
+          <input type="text" class="form-input" id="categoryNameEn" placeholder="e.g. Dev Tools" required>
+        </div>
+        <div class="form-group">
+          <label>排序权重 (数字越小越靠前)</label>
+          <input type="number" class="form-input" id="categorySortOrder" placeholder="0" value="0">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeCategoryModal()">取消</button>
+          <button type="submit" class="btn btn-primary">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== 链接编辑弹窗 ==================== -->
+  <div class="modal-overlay" id="linkModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="linkModalTitle">新增链接</h3>
+        <button class="modal-close" onclick="closeLinkModal()">✕</button>
+      </div>
+      <form id="linkForm">
+        <input type="hidden" id="linkId">
+        <div class="form-group">
+          <label>所属分类 *</label>
+          <select class="form-input" id="linkCategoryId" required>
+            <option value="">请选择分类</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>图标 (Emoji)</label>
+          <input type="text" class="form-input" id="linkIcon" placeholder="🔗" maxlength="4">
+        </div>
+        <div class="form-group">
+          <label>中文标题 *</label>
+          <input type="text" class="form-input" id="linkTitleZh" placeholder="例：GitHub" required>
+        </div>
+        <div class="form-group">
+          <label>英文标题 *</label>
+          <input type="text" class="form-input" id="linkTitleEn" placeholder="e.g. GitHub" required>
+        </div>
+        <div class="form-group">
+          <label>URL *</label>
+          <input type="url" class="form-input" id="linkUrl" placeholder="https://example.com" required>
+        </div>
+        <div class="form-group">
+          <label>中文描述</label>
+          <input type="text" class="form-input" id="linkDescZh" placeholder="简短描述">
+        </div>
+        <div class="form-group">
+          <label>英文描述</label>
+          <input type="text" class="form-input" id="linkDescEn" placeholder="Brief description">
+        </div>
+        <div class="form-group">
+          <label>排序权重</label>
+          <input type="number" class="form-input" id="linkSortOrder" placeholder="0" value="0">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeLinkModal()">取消</button>
+          <button type="submit" class="btn btn-primary">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 提示消息容器 -->
+  <div id="toast" class="toast"></div>
+
+  <script src="js/themes.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

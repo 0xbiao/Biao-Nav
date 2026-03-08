@@ -1,0 +1,10 @@
+{
+  "name": "biao-nav",
+  "version": "1.0.0",
+  "description": "基于 Cloudflare Pages + D1 的现代导航站",
+  "private": true,
+  "scripts": {
+    "dev": "npx wrangler pages dev public --d1 DB=migrations/",
+    "deploy": "npx wrangler pages deploy public"
+  }
+}

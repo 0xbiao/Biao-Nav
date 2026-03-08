@@ -406,6 +406,24 @@ select.form-input {
   color: #fff;
 }
 
+/* === 拖拽排序 === */
+.data-table tr[draggable="true"] {
+  transition: opacity var(--transition-fast);
+}
+
+.data-table tr.drag-over td {
+  border-top: 2px solid var(--accent-primary);
+}
+
+.drag-handle {
+  user-select: none;
+  font-size: var(--font-size-lg);
+}
+
+.drag-handle:hover {
+  color: var(--accent-primary) !important;
+}
+
 /* === 页面区域显隐 === */
 .page-section {
   display: none;

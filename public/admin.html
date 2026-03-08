@@ -45,6 +45,8 @@
         <li><a href="#dashboard" class="nav-link active" data-page="dashboard">📊 仪表盘</a></li>
         <li><a href="#categories" class="nav-link" data-page="categories">📁 分类管理</a></li>
         <li><a href="#links" class="nav-link" data-page="links">🔗 链接管理</a></li>
+        <li><a href="#settings" class="nav-link" data-page="settings">⚙️ 站点设置</a></li>
+        <li><a href="#data" class="nav-link" data-page="data">💾 数据管理</a></li>
       </ul>
       <div class="sidebar-footer">
         <button class="btn btn-secondary btn-block btn-sm" id="logoutBtn">🚪 退出登录</button>
@@ -80,9 +82,11 @@
           <h2>📁 分类管理</h2>
           <button class="btn btn-primary" id="addCategoryBtn">+ 新增分类</button>
         </div>
+        <p style="color:var(--text-muted);font-size:var(--font-size-sm);margin-bottom:var(--space-md);">💡 拖拽行可调整排序</p>
         <table class="data-table" id="categoriesTable">
           <thead>
             <tr>
+              <th style="width:30px;"></th>
               <th>图标</th>
               <th>中文名</th>
               <th>英文名</th>
@@ -105,9 +109,11 @@
             <button class="btn btn-primary" id="addLinkBtn">+ 新增链接</button>
           </div>
         </div>
+        <p style="color:var(--text-muted);font-size:var(--font-size-sm);margin-bottom:var(--space-md);">💡 拖拽行可调整排序</p>
         <table class="data-table" id="linksTable">
           <thead>
             <tr>
+              <th style="width:30px;"></th>
               <th>图标</th>
               <th>中文标题</th>
               <th>英文标题</th>
@@ -119,6 +125,54 @@
           </thead>
           <tbody id="linksBody"></tbody>
         </table>
+      </div>
+
+      <!-- 站点设置 -->
+      <div id="page-settings" class="page-section">
+        <div class="admin-header">
+          <h2>⚙️ 站点设置</h2>
+        </div>
+        <div style="max-width:600px;">
+          <div class="form-group">
+            <label>中文站名</label>
+            <input type="text" class="form-input" id="settingSiteNameZh" placeholder="Biao导航">
+          </div>
+          <div class="form-group">
+            <label>英文站名</label>
+            <input type="text" class="form-input" id="settingSiteNameEn" placeholder="Biao Nav">
+          </div>
+          <div class="form-group">
+            <label>中文描述</label>
+            <input type="text" class="form-input" id="settingSiteDescZh" placeholder="探索互联网的精彩">
+          </div>
+          <div class="form-group">
+            <label>英文描述</label>
+            <input type="text" class="form-input" id="settingSiteDescEn" placeholder="Explore the best of the Internet">
+          </div>
+          <button class="btn btn-primary" id="saveSettingsBtn">💾 保存设置</button>
+        </div>
+      </div>
+
+      <!-- 数据管理 -->
+      <div id="page-data" class="page-section">
+        <div class="admin-header">
+          <h2>💾 数据管理</h2>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-card-icon">📥</div>
+            <div class="stat-card-value" style="font-size:var(--font-size-xl);">导出数据</div>
+            <div class="stat-card-label" style="margin-bottom:var(--space-md);">将所有分类、链接和设置导出为 JSON 文件</div>
+            <button class="btn btn-primary btn-block" id="exportBtn">📥 导出备份</button>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon">📤</div>
+            <div class="stat-card-value" style="font-size:var(--font-size-xl);">导入数据</div>
+            <div class="stat-card-label" style="margin-bottom:var(--space-md);">从 JSON 文件导入数据（会覆盖现有数据！）</div>
+            <input type="file" id="importFile" accept=".json" style="display:none;">
+            <button class="btn btn-danger btn-block" id="importBtn">📤 导入数据</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>

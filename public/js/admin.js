@@ -1,42 +1,36 @@
 // ============================================
 // Biao-Nav 管理后台逻辑
-// 登录、分类管理、链接管理
+// 登录、分类管理、链接管理、站点设置、
+// 拖拽排序、数据导入导出
 // ============================================
 
 (function() {
-  // API 基础路径
   const API = '/api';
-
-  // JWT Token
   let token = localStorage.getItem('biao-nav-token') || '';
-
-  // 缓存数据
   let categories = [];
   let links = [];
+  let dragSrcRow = null; // 拖拽源行
 
   // ========== 初始化 ==========
   document.addEventListener('DOMContentLoaded', () => {
-    // 检查 token 是否有效
-    if (token) {
-      showAdmin();
-    }
-
+    if (token) showAdmin();
     initLogin();
     initNavigation();
     initCategoryForm();
     initLinkForm();
     initLogout();
     initLinkFilter();
+    initSettings();
+    initDataManagement();
   });
 
-  // ========== 登录功能 ==========
+  // ========== 登录 ==========
   function initLogin() {
     const form = document.getElementById('loginForm');
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const password = document.getElementById('loginPassword').value;
       const btn = document.getElementById('loginBtn');
-
       btn.textContent = '登录中...';
       btn.disabled = true;
 
@@ -46,35 +40,23 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ password }),
         });
-
         const data = await res.json();
-
-        if (!res.ok) {
-          showToast(data.error || '登录失败', 'error');
-          return;
-        }
-
+        if (!res.ok) { showToast(data.error || '登录失败', 'error'); return; }
         token = data.token;
         localStorage.setItem('biao-nav-token', token);
         showToast('登录成功', 'success');
         showAdmin();
-      } catch (err) {
-        showToast('网络错误', 'error');
-      } finally {
-        btn.textContent = '登 录';
-        btn.disabled = false;
-      }
+      } catch { showToast('网络错误', 'error'); }
+      finally { btn.textContent = '登 录'; btn.disabled = false; }
     });
   }
 
-  // ========== 显示管理界面 ==========
   function showAdmin() {
     document.getElementById('loginView').style.display = 'none';
     document.getElementById('adminView').style.display = 'flex';
     loadDashboard();
   }
 
-  // ========== 退出登录 ==========
   function initLogout() {
     document.getElementById('logoutBtn')?.addEventListener('click', () => {
       token = '';
@@ -91,19 +73,15 @@
       link.addEventListener('click', (e) => {
         e.preventDefault();
         const page = link.getAttribute('data-page');
-
-        // 更新激活状态
         document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
         link.classList.add('active');
-
-        // 切换页面
         document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
         document.getElementById(`page-${page}`)?.classList.add('active');
 
-        // 加载数据
         if (page === 'dashboard') loadDashboard();
         if (page === 'categories') loadCategories();
         if (page === 'links') loadLinks();
+        if (page === 'settings') loadSettings();
       });
     });
   }
@@ -112,18 +90,12 @@
   async function apiRequest(path, method = 'GET', body = null) {
     const options = {
       method,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
     };
     if (body) options.body = JSON.stringify(body);
-
     const res = await fetch(`${API}${path}`, options);
     const data = await res.json();
-
     if (res.status === 401) {
-      // Token 过期，回到登录
       token = '';
       localStorage.removeItem('biao-nav-token');
       document.getElementById('loginView').style.display = '';
@@ -131,28 +103,23 @@
       showToast('登录已过期，请重新登录', 'error');
       throw new Error('Unauthorized');
     }
-
-    if (!res.ok) {
-      throw new Error(data.error || '请求失败');
-    }
-
+    if (!res.ok) throw new Error(data.error || '请求失败');
     return data;
   }
 
   // ========== 仪表盘 ==========
   async function loadDashboard() {
     try {
-      const catData = await apiRequest('/categories');
-      const linkData = await apiRequest('/links');
+      const [catData, linkData] = await Promise.all([
+        apiRequest('/categories'),
+        apiRequest('/links'),
+      ]);
       categories = catData.data || [];
       links = linkData.data || [];
-
       document.getElementById('statCategories').textContent = categories.length;
       document.getElementById('statLinks').textContent = links.length;
     } catch (err) {
-      if (err.message !== 'Unauthorized') {
-        showToast('加载仪表盘数据失败', 'error');
-      }
+      if (err.message !== 'Unauthorized') showToast('加载仪表盘数据失败', 'error');
     }
   }
 
@@ -172,12 +139,13 @@
     if (!tbody) return;
 
     if (categories.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:40px;">暂无分类，点击"新增分类"添加</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:40px;">暂无分类</td></tr>';
       return;
     }
 
     tbody.innerHTML = categories.map(cat => `
-      <tr>
+      <tr draggable="true" data-id="${cat.id}" data-type="categories">
+        <td class="drag-handle" style="cursor:grab;color:var(--text-muted);">≡</td>
         <td>${cat.icon}</td>
         <td>${escapeHtml(cat.name_zh)}</td>
         <td>${escapeHtml(cat.name_en)}</td>
@@ -188,9 +156,11 @@
         </td>
       </tr>
     `).join('');
+
+    // 绑定拖拽事件
+    initDragSort(tbody, 'categories');
   }
 
-  // 分类弹窗操作
   function initCategoryForm() {
     document.getElementById('addCategoryBtn')?.addEventListener('click', () => {
       document.getElementById('categoryModalTitle').textContent = '新增分类';
@@ -209,28 +179,18 @@
         icon: document.getElementById('categoryIcon').value || '📁',
         sort_order: parseInt(document.getElementById('categorySortOrder').value) || 0,
       };
-
       try {
-        if (id) {
-          await apiRequest(`/categories/${id}`, 'PUT', body);
-          showToast('分类更新成功', 'success');
-        } else {
-          await apiRequest('/categories', 'POST', body);
-          showToast('分类创建成功', 'success');
-        }
+        if (id) { await apiRequest(`/categories/${id}`, 'PUT', body); showToast('分类更新成功', 'success'); }
+        else { await apiRequest('/categories', 'POST', body); showToast('分类创建成功', 'success'); }
         closeCategoryModal();
         loadCategories();
-      } catch (err) {
-        showToast(err.message, 'error');
-      }
+      } catch (err) { showToast(err.message, 'error'); }
     });
   }
 
-  // 编辑分类（全局函数供 onclick 调用）
   window.editCategory = function(id) {
     const cat = categories.find(c => c.id === id);
     if (!cat) return;
-
     document.getElementById('categoryModalTitle').textContent = '编辑分类';
     document.getElementById('categoryId').value = cat.id;
     document.getElementById('categoryIcon').value = cat.icon;
@@ -240,17 +200,13 @@
     document.getElementById('categoryModal').classList.add('active');
   };
 
-  // 删除分类
   window.deleteCategory = async function(id, name) {
     if (!confirm(`确定要删除分类「${name}」吗？\n该分类下所有链接也会被删除！`)) return;
-
     try {
       await apiRequest(`/categories/${id}`, 'DELETE');
       showToast('分类已删除', 'success');
       loadCategories();
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
+    } catch (err) { showToast(err.message, 'error'); }
   };
 
   window.closeCategoryModal = function() {
@@ -259,23 +215,17 @@
 
   // ========== 链接管理 ==========
   function initLinkFilter() {
-    document.getElementById('linkCategoryFilter')?.addEventListener('change', () => {
-      renderLinksTable();
-    });
+    document.getElementById('linkCategoryFilter')?.addEventListener('change', () => renderLinksTable());
   }
 
   async function loadLinks() {
     try {
-      // 同时加载分类和链接
       const [catData, linkData] = await Promise.all([
         apiRequest('/categories'),
         apiRequest('/links'),
       ]);
-
       categories = catData.data || [];
       links = linkData.data || [];
-
-      // 更新分类筛选下拉
       updateCategorySelects();
       renderLinksTable();
     } catch (err) {
@@ -284,7 +234,6 @@
   }
 
   function updateCategorySelects() {
-    // 筛选下拉
     const filter = document.getElementById('linkCategoryFilter');
     if (filter) {
       const currentVal = filter.value;
@@ -292,8 +241,6 @@
         categories.map(c => `<option value="${c.id}">${c.icon} ${escapeHtml(c.name_zh)}</option>`).join('');
       filter.value = currentVal;
     }
-
-    // 表单下拉
     const formSelect = document.getElementById('linkCategoryId');
     if (formSelect) {
       formSelect.innerHTML = '<option value="">请选择分类</option>' +
@@ -304,26 +251,23 @@
   function renderLinksTable() {
     const tbody = document.getElementById('linksBody');
     if (!tbody) return;
-
     const filterCatId = document.getElementById('linkCategoryFilter')?.value;
     let filtered = links;
-
-    if (filterCatId) {
-      filtered = links.filter(l => String(l.category_id) === filterCatId);
-    }
+    if (filterCatId) filtered = links.filter(l => String(l.category_id) === filterCatId);
 
     if (filtered.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:40px;">暂无链接</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:40px;">暂无链接</td></tr>';
       return;
     }
 
     tbody.innerHTML = filtered.map(link => `
-      <tr>
+      <tr draggable="true" data-id="${link.id}" data-type="links">
+        <td class="drag-handle" style="cursor:grab;color:var(--text-muted);">≡</td>
         <td>${link.icon || '🔗'}</td>
         <td>${escapeHtml(link.title_zh)}</td>
         <td>${escapeHtml(link.title_en)}</td>
         <td>${escapeHtml(link.category_name_zh || '-')}</td>
-        <td><a href="${escapeHtml(link.url)}" target="_blank" style="color:var(--accent-primary);word-break:break-all;">${truncate(link.url, 30)}</a></td>
+        <td><a href="${escapeHtml(link.url)}" target="_blank" style="color:var(--accent-primary);word-break:break-all;">${truncate(link.url, 25)}</a></td>
         <td>${link.sort_order}</td>
         <td class="actions">
           <button class="btn btn-secondary btn-sm" onclick="editLink(${link.id})">编辑</button>
@@ -331,9 +275,10 @@
         </td>
       </tr>
     `).join('');
+
+    initDragSort(tbody, 'links');
   }
 
-  // 链接弹窗操作
   function initLinkForm() {
     document.getElementById('addLinkBtn')?.addEventListener('click', () => {
       document.getElementById('linkModalTitle').textContent = '新增链接';
@@ -357,27 +302,18 @@
         icon: document.getElementById('linkIcon').value || '',
         sort_order: parseInt(document.getElementById('linkSortOrder').value) || 0,
       };
-
       try {
-        if (id) {
-          await apiRequest(`/links/${id}`, 'PUT', body);
-          showToast('链接更新成功', 'success');
-        } else {
-          await apiRequest('/links', 'POST', body);
-          showToast('链接创建成功', 'success');
-        }
+        if (id) { await apiRequest(`/links/${id}`, 'PUT', body); showToast('链接更新成功', 'success'); }
+        else { await apiRequest('/links', 'POST', body); showToast('链接创建成功', 'success'); }
         closeLinkModal();
         loadLinks();
-      } catch (err) {
-        showToast(err.message, 'error');
-      }
+      } catch (err) { showToast(err.message, 'error'); }
     });
   }
 
   window.editLink = function(id) {
     const link = links.find(l => l.id === id);
     if (!link) return;
-
     document.getElementById('linkModalTitle').textContent = '编辑链接';
     document.getElementById('linkId').value = link.id;
     document.getElementById('linkIcon').value = link.icon;
@@ -387,7 +323,6 @@
     document.getElementById('linkDescZh').value = link.description_zh || '';
     document.getElementById('linkDescEn').value = link.description_en || '';
     document.getElementById('linkSortOrder').value = link.sort_order;
-
     updateCategorySelects();
     document.getElementById('linkCategoryId').value = link.category_id;
     document.getElementById('linkModal').classList.add('active');
@@ -395,19 +330,157 @@
 
   window.deleteLink = async function(id, name) {
     if (!confirm(`确定要删除链接「${name}」吗？`)) return;
-
     try {
       await apiRequest(`/links/${id}`, 'DELETE');
       showToast('链接已删除', 'success');
       loadLinks();
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
+    } catch (err) { showToast(err.message, 'error'); }
   };
 
   window.closeLinkModal = function() {
     document.getElementById('linkModal').classList.remove('active');
   };
+
+  // ========== 拖拽排序 ==========
+  function initDragSort(tbody, tableName) {
+    const rows = tbody.querySelectorAll('tr[draggable="true"]');
+    rows.forEach(row => {
+      row.addEventListener('dragstart', (e) => {
+        dragSrcRow = row;
+        row.style.opacity = '0.5';
+        e.dataTransfer.effectAllowed = 'move';
+      });
+
+      row.addEventListener('dragend', () => {
+        row.style.opacity = '1';
+        tbody.querySelectorAll('tr').forEach(r => r.classList.remove('drag-over'));
+      });
+
+      row.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        row.classList.add('drag-over');
+      });
+
+      row.addEventListener('dragleave', () => {
+        row.classList.remove('drag-over');
+      });
+
+      row.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        row.classList.remove('drag-over');
+        if (dragSrcRow === row) return;
+
+        // 交换 DOM 位置
+        const parent = row.parentNode;
+        const allRows = [...parent.querySelectorAll('tr[draggable="true"]')];
+        const srcIdx = allRows.indexOf(dragSrcRow);
+        const destIdx = allRows.indexOf(row);
+
+        if (srcIdx < destIdx) {
+          parent.insertBefore(dragSrcRow, row.nextSibling);
+        } else {
+          parent.insertBefore(dragSrcRow, row);
+        }
+
+        // 保存新排序
+        const newOrder = [...parent.querySelectorAll('tr[draggable="true"]')].map((r, i) => ({
+          id: parseInt(r.dataset.id),
+          sort_order: i,
+        }));
+
+        try {
+          await apiRequest('/sort', 'PUT', { table: tableName, items: newOrder });
+          showToast('排序已保存', 'success');
+          // 重新加载以同步数据
+          if (tableName === 'categories') loadCategories();
+          else loadLinks();
+        } catch (err) {
+          showToast('排序保存失败', 'error');
+        }
+      });
+    });
+  }
+
+  // ========== 站点设置 ==========
+  function initSettings() {
+    document.getElementById('saveSettingsBtn')?.addEventListener('click', async () => {
+      const body = {
+        site_name_zh: document.getElementById('settingSiteNameZh').value,
+        site_name_en: document.getElementById('settingSiteNameEn').value,
+        site_desc_zh: document.getElementById('settingSiteDescZh').value,
+        site_desc_en: document.getElementById('settingSiteDescEn').value,
+      };
+      try {
+        await apiRequest('/settings', 'PUT', body);
+        showToast('设置保存成功', 'success');
+      } catch (err) { showToast(err.message, 'error'); }
+    });
+  }
+
+  async function loadSettings() {
+    try {
+      const data = await apiRequest('/settings');
+      const s = data.data || {};
+      document.getElementById('settingSiteNameZh').value = s.site_name_zh || '';
+      document.getElementById('settingSiteNameEn').value = s.site_name_en || '';
+      document.getElementById('settingSiteDescZh').value = s.site_desc_zh || '';
+      document.getElementById('settingSiteDescEn').value = s.site_desc_en || '';
+    } catch (err) {
+      if (err.message !== 'Unauthorized') showToast('加载设置失败', 'error');
+    }
+  }
+
+  // ========== 数据导入导出 ==========
+  function initDataManagement() {
+    // 导出
+    document.getElementById('exportBtn')?.addEventListener('click', async () => {
+      try {
+        const res = await fetch(`${API}/export`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error('导出失败');
+        const data = await res.json();
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `biao-nav-backup-${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('数据已导出', 'success');
+      } catch (err) { showToast(err.message, 'error'); }
+    });
+
+    // 导入
+    const importBtn = document.getElementById('importBtn');
+    const importFile = document.getElementById('importFile');
+
+    importBtn?.addEventListener('click', () => importFile?.click());
+
+    importFile?.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      if (!confirm('⚠️ 导入数据将覆盖所有现有分类、链接和设置！\n确定要继续吗？')) {
+        importFile.value = '';
+        return;
+      }
+
+      try {
+        const text = await file.text();
+        const importData = JSON.parse(text);
+
+        await apiRequest('/import', 'POST', importData);
+        showToast(`导入成功！分类: ${importData.categories?.length || 0}，链接: ${importData.links?.length || 0}`, 'success');
+        loadDashboard();
+      } catch (err) {
+        showToast('导入失败: ' + err.message, 'error');
+      } finally {
+        importFile.value = '';
+      }
+    });
+  }
 
   // ========== 工具函数 ==========
   function showToast(message, type = 'success') {

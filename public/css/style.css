@@ -194,7 +194,7 @@ input, select, textarea {
 
 .search-box input {
   width: 100%;
-  padding: 10px 16px 10px 42px;
+  padding: 10px 40px 10px 42px;
   border-radius: var(--radius-full);
   border: 1px solid var(--border-color);
   background: var(--bg-input);
@@ -835,6 +835,12 @@ input, select, textarea {
 
   .logo {
     font-size: var(--font-size-base);
+  }
+
+  .search-container {
+    flex-direction: column;
+    width: 100%;
+    gap: var(--space-sm) !important;
   }
 
   .search-box {

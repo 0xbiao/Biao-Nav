@@ -15,6 +15,7 @@
     google: { icon: '🌐', url: 'https://www.google.com/search?q=' },
     bing: { icon: '🔷', url: 'https://www.bing.com/search?q=' },
     baidu: { icon: '🅱️', url: 'https://www.baidu.com/s?wd=' },
+    local: { icon: '🔍', url: null },
   };
 
   document.addEventListener('DOMContentLoaded', () => {
@@ -52,18 +53,29 @@
 
   // ========== 搜索 ==========
   function initSearch() {
-    const searchInput = document.getElementById('searchInput');
-    if (!searchInput) return;
+    const internalInput = document.getElementById('searchInputInternal');
+    const externalInput = document.getElementById('searchInputExternal');
 
-    // 回车触发外部搜索
-    searchInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        const query = searchInput.value.trim();
-        if (query) {
-          window.open(SEARCH_ENGINES[currentEngine].url + encodeURIComponent(query), '_blank');
+    if (internalInput) {
+      let debounceTimer;
+      internalInput.addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          renderNavGrid();
+        }, 200);
+      });
+    }
+
+    if (externalInput) {
+      externalInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const query = externalInput.value.trim();
+          if (query) {
+            window.open(SEARCH_ENGINES[currentEngine].url + encodeURIComponent(query), '_blank');
+          }
         }
-      }
-    });
+      });
+    }
   }
 
   // ========== 搜索引擎切换 ==========
@@ -80,9 +92,11 @@
 
     // 初始设置 Placeholder
     const updatePlaceholder = (item) => {
-      const searchInput = document.getElementById('searchInput');
-      const engineName = item.textContent.trim().split(' ').pop();
-      searchInput.placeholder = t('searchWith').replace('{engine}', engineName);
+      const externalInput = document.getElementById('searchInputExternal');
+      if (externalInput) {
+        const engineName = item.textContent.trim().split(' ').pop();
+        externalInput.placeholder = t('searchWith').replace('{engine}', engineName);
+      }
     };
 
     // 初始化时调用一次
@@ -138,14 +152,15 @@
   // ========== 键盘快捷键 ==========
   function initKeyboardShortcuts() {
     document.addEventListener('keydown', (e) => {
-      // 按 / 聚焦搜索框（不在输入框中时）
+      // 按 / 聚焦内部搜索框（不在输入框中时）
       if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
         e.preventDefault();
-        document.getElementById('searchInput')?.focus();
+        document.getElementById('searchInputInternal')?.focus();
       }
       // Escape 失焦
       if (e.key === 'Escape') {
-        document.getElementById('searchInput')?.blur();
+        document.getElementById('searchInputInternal')?.blur();
+        document.getElementById('searchInputExternal')?.blur();
       }
     });
   }
@@ -216,6 +231,9 @@
   // ========== 渲染导航网格 ==========
   function renderNavGrid() {
     const grid = document.getElementById('navGrid');
+    const internalInput = document.getElementById('searchInputInternal');
+    const searchTerm = internalInput?.value?.toLowerCase()?.trim() || '';
+
     if (!grid) return;
     grid.innerHTML = '';
 
@@ -226,8 +244,15 @@
       // 分类过滤
       if (currentCategory !== 'all' && String(cat.id) !== currentCategory) return;
 
-      // 如果当前分类下没有链接则跳过
-      const filteredLinks = cat.links || [];
+      // 过滤链接
+      const filteredLinks = (cat.links || []).filter(link => {
+        if (!searchTerm) return true;
+        const title = (link[langField('title')] || link.title_zh || '').toLowerCase();
+        const desc = (link[langField('description')] || link.description_zh || '').toLowerCase();
+        const url = (link.url || '').toLowerCase();
+        return title.includes(searchTerm) || desc.includes(searchTerm) || url.includes(searchTerm);
+      });
+
       if (filteredLinks.length === 0) return;
       hasResults = true;
 
@@ -281,11 +306,11 @@
     }
   }
 
-  // ========== 获取 Favicon URL（主源：Google） ==========
+  // ========== 获取 Favicon URL（主源：favicon.im） ==========
   function getFaviconUrl(url) {
     try {
       const domain = new URL(url).hostname;
-      return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+      return `https://favicon.im/${domain}`;
     } catch {
       return '';
     }

@@ -27,16 +27,27 @@
         <span class="logo-text" data-i18n="siteName">Biao导航</span>
       </div>
 
-      <div class="search-wrapper">
-        <div class="search-box">
-          <button class="search-engine-btn" id="searchEngineBtn" title="切换搜索引擎">🌐</button>
-          <input type="text" id="searchInput" placeholder="Search...">
-          <span class="kbd-hint">/</span>
+      <div class="search-container" style="display: flex; gap: var(--space-md); flex: 1; max-width: 600px;">
+        <!-- 外部搜索 -->
+        <div class="search-wrapper" style="flex: 1;">
+          <div class="search-box">
+            <button class="search-engine-btn" id="searchEngineBtn" title="切换搜索引擎">🌐</button>
+            <input type="text" id="searchInputExternal" placeholder="Search...">
+          </div>
+          <div class="search-engines-dropdown" id="searchEnginesDropdown">
+            <button class="search-engine-item active" data-engine="google" data-icon="🌐">🌐 Google</button>
+            <button class="search-engine-item" data-engine="bing" data-icon="🔷">🔷 Bing</button>
+            <button class="search-engine-item" data-engine="baidu" data-icon="🅱️">🅱️ <span data-i18n="engineBaidu">百度</span></button>
+          </div>
         </div>
-        <div class="search-engines-dropdown" id="searchEnginesDropdown">
-          <button class="search-engine-item active" data-engine="google" data-icon="🌐">🌐 Google</button>
-          <button class="search-engine-item" data-engine="bing" data-icon="🔷">🔷 Bing</button>
-          <button class="search-engine-item" data-engine="baidu" data-icon="🅱️">🅱️ <span data-i18n="engineBaidu">百度</span></button>
+
+        <!-- 站内导航搜索 -->
+        <div class="search-wrapper" style="flex: 1;">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInputInternal" data-i18n-placeholder="searchPlaceholder" placeholder="搜索导航...">
+            <span class="kbd-hint" style="right: 14px;">/</span>
+          </div>
         </div>
       </div>
 

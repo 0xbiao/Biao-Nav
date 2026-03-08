@@ -469,6 +469,25 @@
         const text = await file.text();
         const importData = JSON.parse(text);
 
+        // 导入前先自动备份当前数据
+        try {
+          showToast('正在为您自动备份当前数据...', 'success');
+          const resExport = await fetch(`${API}/export`, { headers: { 'Authorization': `Bearer ${token}` } });
+          if (resExport.ok) {
+            const exportData = await resExport.json();
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `biao-nav-autobackup-before-import-${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+          }
+        } catch (e) {
+          console.warn('自动备份失败', e);
+        }
+
+        // 执行导入
         await apiRequest('/import', 'POST', importData);
         showToast(`导入成功！分类: ${importData.categories?.length || 0}，链接: ${importData.links?.length || 0}`, 'success');
         loadDashboard();

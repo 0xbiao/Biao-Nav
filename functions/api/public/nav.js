@@ -34,7 +34,7 @@ export async function onRequestGet(context) {
     return new Response(JSON.stringify({ categories: data, settings }), {
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=60', // 缓存 60 秒
+        'Cache-Control': 'public, max-age=300, stale-while-revalidate=86400', // 缓存 5 分钟，后台回源1天
       },
     });
   } catch (err) {

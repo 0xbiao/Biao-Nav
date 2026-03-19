@@ -188,11 +188,15 @@
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       navData = await res.json();
 
-      // 更新站名
-      if (navData.settings) {
+      // 更新站名（CF 环境变量优先级最高）
+      if (window.CF_SITE_NAME) {
+        const logo = document.querySelector('.logo-text');
+        if (logo) logo.textContent = window.CF_SITE_NAME;
+      } else if (navData.settings) {
         const nameKey = `site_name_${currentLang}`;
         if (navData.settings[nameKey]) {
-          document.querySelector('.logo-text').textContent = navData.settings[nameKey];
+          const logo = document.querySelector('.logo-text');
+          if (logo) logo.textContent = navData.settings[nameKey];
         }
       }
 

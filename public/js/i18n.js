@@ -3,9 +3,12 @@
 // 支持中文 (zh) 和英文 (en)
 // ============================================
 
+const cfgSiteNameZh = window.CF_SITE_NAME || 'Biao导航';
+const cfgSiteNameEn = window.CF_SITE_NAME ? `${window.CF_SITE_NAME} Nav` : 'Biao Nav';
+
 const I18N = {
   zh: {
-    siteName: 'Biao导航',
+    siteName: cfgSiteNameZh,
     searchPlaceholder: '搜索导航...',
     searchWith: '使用 {engine} 搜索...',
     allCategories: '全部',
@@ -24,7 +27,7 @@ const I18N = {
     loading: '加载中...',
   },
   en: {
-    siteName: 'Biao Nav',
+    siteName: cfgSiteNameEn,
     searchPlaceholder: 'Search navigation...',
     searchWith: 'Search with {engine}...',
     allCategories: 'All',

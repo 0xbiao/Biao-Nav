@@ -28,10 +28,20 @@
     loadNavData();
   });
 
-  // 监听语言变化事件，重新渲染
+  // 监听语言变化事件，重新渲染并更新搜索框 placeholder
   window.addEventListener('langChanged', () => {
     renderCategories();
     renderNavGrid();
+    // 更新外部搜索框 placeholder
+    const dropdown = document.getElementById('searchEnginesDropdown');
+    const activeItem = dropdown?.querySelector(`.search-engine-item[data-engine="${currentEngine}"]`);
+    if (activeItem) {
+      const externalInput = document.getElementById('searchInputExternal');
+      if (externalInput) {
+        const engineName = activeItem.textContent.trim().split(' ').pop();
+        externalInput.placeholder = t('searchWith').replace('{engine}', engineName);
+      }
+    }
   });
 
   // ========== 时钟 ==========
@@ -257,12 +267,12 @@
       hasResults = true;
 
       // 分类标题（带交错动画）
-      const catName = cat[langField('name')] || cat.name_zh;
+      const catName = escapeHtml(cat[langField('name')] || cat.name_zh);
       const sectionEl = document.createElement('div');
       sectionEl.className = 'category-section';
       sectionEl.style.animationDelay = `${cardIndex * 0.05}s`;
       sectionEl.innerHTML = `
-        <span class="category-section-icon">${cat.icon}</span>
+        <span class="category-section-icon">${escapeHtml(cat.icon)}</span>
         <span class="category-section-title">${catName}</span>
         <div class="category-section-line"></div>
       `;
@@ -273,8 +283,13 @@
       filteredLinks.forEach(link => {
         const title = link[langField('title')] || link.title_zh;
         const desc = link[langField('description')] || link.description_zh;
-        const faviconUrl = getFaviconUrl(link.url);
-        const fallbackIcon = link.icon || '🔗';
+        
+        // 我们不再预先给出写死的 fallback，而是挂载一个错误处理队列来尝试
+        const domainUrl = link.url;
+        const domain = (()=>{try{return new URL(domainUrl).hostname;}catch{return '';}})();
+        const firstAttemptUrl = `https://favicon.im/${domain}`;
+        
+        const fallbackIcon = escapeHtml(link.icon || '🔗');
         const cardEl = document.createElement('a');
         cardEl.className = 'nav-card';
         cardEl.href = link.url;
@@ -283,7 +298,7 @@
         cardEl.style.animationDelay = `${cardIndex * 0.05}s`;
         cardEl.innerHTML = `
           <div class="nav-card-icon">
-            <img src="${faviconUrl}" alt="" class="favicon-img" onerror="this.onerror=null;this.src='${getFaviconFallback(link.url)}';this.addEventListener('error',function(){this.style.display='none';this.nextElementSibling.style.display='flex';});">
+            <img src="${firstAttemptUrl}" data-url="${escapeHtml(domainUrl)}" data-retry="0" alt="" class="favicon-img" onerror="window.handleFaviconError(this)">
             <span class="favicon-fallback" style="display:none;">${fallbackIcon}</span>
           </div>
           <div class="nav-card-info">
@@ -306,25 +321,46 @@
     }
   }
 
-  // ========== 获取 Favicon URL（主源：favicon.im） ==========
-  function getFaviconUrl(url) {
+  // ========== 全局 Favicon 加载错误处理 ==========
+  // 按顺序尝试多个公有防盗链较弱的接口以及站点原生 ico
+  window.handleFaviconError = function(img) {
+    const url = img.getAttribute('data-url');
+    let retryCount = parseInt(img.getAttribute('data-retry'));
+    
+    let domain = '';
+    let origin = '';
     try {
-      const domain = new URL(url).hostname;
-      return `https://favicon.im/${domain}`;
+      const u = new URL(url);
+      domain = u.hostname;
+      origin = u.origin;
     } catch {
-      return '';
+      showFallback();
+      return;
     }
-  }
 
-  // ========== 获取 Favicon 备用源 ==========
-  function getFaviconFallback(url) {
-    try {
-      const origin = new URL(url).origin;
-      return `${origin}/favicon.ico`;
-    } catch {
-      return '';
+    const fallbackSources = [
+      `https://www.google.com/s2/favicons?domain=${domain}&sz=64`,
+      `https://api.iowen.cn/favicon/${domain}.png`,
+      `https://staticaly.com/favicon/${domain}`, // 稳定服务
+      `${origin}/favicon.ico`,
+      `${origin}/apple-touch-icon.png`
+    ];
+
+    if (retryCount < fallbackSources.length) {
+      img.src = fallbackSources[retryCount];
+      img.setAttribute('data-retry', retryCount + 1);
+    } else {
+      showFallback();
     }
-  }
+
+    function showFallback() {
+      img.onerror = null;
+      img.style.display = 'none';
+      if (img.nextElementSibling) {
+        img.nextElementSibling.style.display = 'flex';
+      }
+    }
+  };
 
   // ========== HTML 转义 ==========
   function escapeHtml(text) {

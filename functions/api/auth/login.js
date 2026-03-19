@@ -35,8 +35,18 @@ export async function onRequestPost(context) {
   const { request, env } = context;
 
   try {
+    const adminPassword = env.ADMIN_PASSWORD;
+    const jwtSecret = env.JWT_SECRET;
+
+    // 强制要求配置 CF 环境变量，未配置则拒绝登录
+    if (!adminPassword || !jwtSecret) {
+      return new Response(JSON.stringify({ error: '管理后台未配置，请在 Cloudflare 中设置 ADMIN_PASSWORD 和 JWT_SECRET 环境变量' }), {
+        status: 503,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     const { password } = await request.json();
-    const adminPassword = env.ADMIN_PASSWORD || 'admin123';
 
     if (password !== adminPassword) {
       return new Response(JSON.stringify({ error: '密码错误' }), {
@@ -45,7 +55,6 @@ export async function onRequestPost(context) {
       });
     }
 
-    const jwtSecret = env.JWT_SECRET || 'biao-nav-default-secret';
     const token = await createJWT({ role: 'admin' }, jwtSecret);
 
     return new Response(JSON.stringify({ token, message: '登录成功' }), {

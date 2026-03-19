@@ -1,5 +1,6 @@
-// 数据导入接口（需认证）
-// POST /api/import - 从 JSON 导入数据（覆盖所有现有数据）
+// \u6570\u636e\u5bfc\u5165\u63a5\u53e3\uff08\u9700\u8ba4\u8bc1\uff09
+// POST /api/import - \u4ece JSON \u5bfc\u5165\u6570\u636e\uff08\u8986\u76d6\u6240\u6709\u73b0\u6709\u6570\u636e\uff09
+// \u4f7f\u7528\u5355\u6b21 batch \u8c03\u7528\u4fdd\u8bc1\u539f\u5b50\u6027
 
 export async function onRequestPost(context) {
   const { request, env } = context;
@@ -8,56 +9,51 @@ export async function onRequestPost(context) {
     const importData = await request.json();
 
     if (!importData.categories || !importData.links) {
-      return new Response(JSON.stringify({ error: '无效的导入数据格式' }), {
+      return new Response(JSON.stringify({ error: '\u65e0\u6548\u7684\u5bfc\u5165\u6570\u636e\u683c\u5f0f' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    // 清空现有数据
-    await env.DB.batch([
-      env.DB.prepare('DELETE FROM links'),
-      env.DB.prepare('DELETE FROM categories'),
-      env.DB.prepare('DELETE FROM settings'),
-    ]);
+    // \u6784\u5efa\u5168\u90e8\u64cd\u4f5c\u8bed\u53e5\uff0c\u5408\u5e76\u4e3a\u5355\u6b21 batch \u4fdd\u8bc1\u539f\u5b50\u6027
+    const statements = [];
 
-    // 导入设置
+    // 1. \u6e05\u7a7a\u73b0\u6709\u6570\u636e
+    statements.push(env.DB.prepare('DELETE FROM links'));
+    statements.push(env.DB.prepare('DELETE FROM categories'));
+    statements.push(env.DB.prepare('DELETE FROM settings'));
+
+    // 2. \u5bfc\u5165\u8bbe\u7f6e
     if (importData.settings) {
       const settingsStmt = env.DB.prepare(
         'INSERT INTO settings (key, value) VALUES (?, ?)'
       );
-      const settingsBatch = Object.entries(importData.settings).map(([key, value]) =>
-        settingsStmt.bind(key, String(value))
-      );
-      if (settingsBatch.length > 0) {
-        await env.DB.batch(settingsBatch);
-      }
+      Object.entries(importData.settings).forEach(([key, value]) => {
+        statements.push(settingsStmt.bind(key, String(value)));
+      });
     }
 
-    // 导入分类（需要保留原始 ID 以维持链接关联）
+    // 3. \u5bfc\u5165\u5206\u7c7b\uff08\u4fdd\u7559\u539f\u59cb ID \u4ee5\u7ef4\u6301\u94fe\u63a5\u5173\u8054\uff09
     const catStmt = env.DB.prepare(
       'INSERT INTO categories (id, name_zh, name_en, icon, sort_order) VALUES (?, ?, ?, ?, ?)'
     );
-    const catBatch = importData.categories.map(cat =>
-      catStmt.bind(cat.id, cat.name_zh, cat.name_en, cat.icon || '📁', cat.sort_order || 0)
-    );
-    if (catBatch.length > 0) {
-      await env.DB.batch(catBatch);
-    }
+    importData.categories.forEach(cat => {
+      statements.push(catStmt.bind(cat.id, cat.name_zh, cat.name_en, cat.icon || '\ud83d\udcc1', cat.sort_order || 0));
+    });
 
-    // 导入链接
+    // 4. \u5bfc\u5165\u94fe\u63a5
     const linkStmt = env.DB.prepare(
       'INSERT INTO links (id, category_id, title_zh, title_en, url, description_zh, description_en, icon, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
     );
-    const linkBatch = importData.links.map(link =>
-      linkStmt.bind(link.id, link.category_id, link.title_zh, link.title_en, link.url, link.description_zh || '', link.description_en || '', link.icon || '', link.sort_order || 0)
-    );
-    if (linkBatch.length > 0) {
-      await env.DB.batch(linkBatch);
-    }
+    importData.links.forEach(link => {
+      statements.push(linkStmt.bind(link.id, link.category_id, link.title_zh, link.title_en, link.url, link.description_zh || '', link.description_en || '', link.icon || '', link.sort_order || 0));
+    });
+
+    // \u5355\u6b21 batch \u539f\u5b50\u6027\u6267\u884c\u6240\u6709\u64cd\u4f5c
+    await env.DB.batch(statements);
 
     return new Response(JSON.stringify({
-      message: '导入成功',
+      message: '\u5bfc\u5165\u6210\u529f',
       stats: {
         categories: importData.categories.length,
         links: importData.links.length,
@@ -66,7 +62,7 @@ export async function onRequestPost(context) {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: '导入失败', detail: err.message }), {
+    return new Response(JSON.stringify({ error: '\u5bfc\u5165\u5931\u8d25', detail: err.message }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });

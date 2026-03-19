@@ -75,7 +75,13 @@ export async function onRequest(context) {
   }
 
   const token = authHeader.substring(7);
-  const jwtSecret = env.JWT_SECRET || 'biao-nav-default-secret';
+  const jwtSecret = env.JWT_SECRET;
+  if (!jwtSecret) {
+    return new Response(JSON.stringify({ error: '服务器未配置 JWT_SECRET 环境变量' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+    });
+  }
   const payload = await verifyJWT(token, jwtSecret);
 
   if (!payload) {

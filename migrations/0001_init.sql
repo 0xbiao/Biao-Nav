@@ -26,6 +26,9 @@ CREATE TABLE IF NOT EXISTS links (
   FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
 );
 
+-- 为 links 表的 category_id 添加索引
+CREATE INDEX IF NOT EXISTS idx_links_category ON links(category_id);
+
 -- 站点设置表
 CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,

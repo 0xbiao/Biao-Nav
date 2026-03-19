@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark" data-accent="ocean">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0a0f">
+  <title>404 - 页面未找到 | Biao导航</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧭</text></svg>">
+  <link rel="stylesheet" href="css/themes.css">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-primary, #0a0a0f);
+      color: var(--text-primary, #e0e0e0);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Noto Sans SC', sans-serif;
+      text-align: center;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 480px;
+    }
+    .error-icon {
+      font-size: 6rem;
+      margin-bottom: 1.5rem;
+      animation: float 3s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
+    }
+    h1 {
+      font-size: 5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent-primary, #3b82f6), var(--accent-secondary, #60a5fa));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+    }
+    p {
+      font-size: 1.1rem;
+      color: var(--text-muted, #666);
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+    .btn-home {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 12px 32px;
+      background: var(--accent-primary, #3b82f6);
+      color: #fff;
+      border-radius: 99px;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 1rem;
+      transition: all 0.2s;
+    }
+    .btn-home:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="error-icon">🧭</div>
+    <h1>404</h1>
+    <p>哎呀，您要找的页面似乎迷路了。<br>请确认链接是否正确，或者返回首页重新导航。</p>
+    <a href="/" class="btn-home">🏠 返回首页</a>
+  </div>
+  <script src="js/themes.js"></script>
+</body>
+</html>

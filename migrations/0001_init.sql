@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS links (
   description_en TEXT DEFAULT '',
   icon TEXT DEFAULT '',
   sort_order INTEGER DEFAULT 0,
+  click_count INTEGER DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
 );

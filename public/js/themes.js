@@ -5,12 +5,19 @@
 
 (function() {
   // 从 localStorage 恢复上次的主题和配色
-  const savedTheme = localStorage.getItem('biao-nav-theme') || 'dark';
+  const savedTheme = localStorage.getItem('biao-nav-theme') || 'auto';
   const savedAccent = localStorage.getItem('biao-nav-accent') || 'ocean';
 
   // 在 DOM 加载前就应用主题，避免闪烁
-  document.documentElement.setAttribute('data-theme', savedTheme);
+  applyTheme(savedTheme);
   document.documentElement.setAttribute('data-accent', savedAccent);
+
+  // 监听系统主题变化
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    if (localStorage.getItem('biao-nav-theme') === 'auto' || !localStorage.getItem('biao-nav-theme')) {
+      applyTheme('auto');
+    }
+  });
 
   document.addEventListener('DOMContentLoaded', () => {
     const themeToggle = document.getElementById('themeToggle');
@@ -51,8 +58,17 @@
     });
   });
 
+  function applyTheme(theme) {
+    if (theme === 'auto') {
+      const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.setAttribute('data-theme', isSystemDark ? 'dark' : 'light');
+    } else {
+      document.documentElement.setAttribute('data-theme', theme);
+    }
+  }
+
   function setTheme(theme) {
-    document.documentElement.setAttribute('data-theme', theme);
+    applyTheme(theme);
     localStorage.setItem('biao-nav-theme', theme);
     updateActiveStates(theme, null);
   }

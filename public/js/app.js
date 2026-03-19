@@ -9,6 +9,10 @@
   let navData = { categories: [], settings: {} };
   let currentCategory = 'all';
   let currentEngine = localStorage.getItem('biao-nav-engine') || 'google';
+  let favorites = JSON.parse(localStorage.getItem('biao-nav-favorites') || '[]');
+
+  // 添加防抖防止高频点击发请求
+  const clickSet = new Set();
 
   // 搜索引擎配置
   const SEARCH_ENGINES = {
@@ -218,6 +222,16 @@
 
     list.innerHTML = `<button class="category-tag ${currentCategory === 'all' ? 'active' : ''}" data-category="all">${t('allCategories')}</button>`;
 
+    // 如果有收藏内容，展示收藏分类
+    if (favorites.length > 0) {
+      const favName = currentLang === 'zh' ? '我的收藏' : 'Favorites';
+      const favBtn = document.createElement('button');
+      favBtn.className = `category-tag ${currentCategory === 'favorites' ? 'active' : ''}`;
+      favBtn.setAttribute('data-category', 'favorites');
+      favBtn.textContent = `⭐ ${favName}`;
+      list.appendChild(favBtn);
+    }
+
     navData.categories.forEach(cat => {
       const name = cat[langField('name')] || cat.name_zh;
       const btn = document.createElement('button');
@@ -250,9 +264,29 @@
     let hasResults = false;
     let cardIndex = 0; // 动画交错索引
 
-    navData.categories.forEach(cat => {
-      // 分类过滤
-      if (currentCategory !== 'all' && String(cat.id) !== currentCategory) return;
+    // 构造即将渲染的分类列表（包含可能的伪分类“Favorites”）
+    let renderList = [];
+    if (currentCategory === 'favorites') {
+      const favLinks = [];
+      navData.categories.forEach(cat => {
+        cat.links.forEach(link => {
+          if (favorites.includes(link.id)) favLinks.push(link);
+        });
+      });
+      renderList.push({
+        id: 'favorites',
+        name_zh: '我的收藏',
+        name_en: 'My Favorites',
+        icon: '⭐',
+        links: favLinks
+      });
+    } else {
+      renderList = navData.categories;
+    }
+
+    renderList.forEach(cat => {
+      // 普通分类过滤
+      if (currentCategory !== 'all' && currentCategory !== 'favorites' && String(cat.id) !== currentCategory) return;
 
       // 过滤链接
       const filteredLinks = (cat.links || []).filter(link => {
@@ -290,6 +324,8 @@
         const firstAttemptUrl = `https://favicon.im/${domain}`;
         
         const fallbackIcon = escapeHtml(link.icon || '🔗');
+        const isFav = favorites.includes(link.id);
+        
         const cardEl = document.createElement('a');
         cardEl.className = 'nav-card';
         cardEl.href = link.url;
@@ -305,7 +341,27 @@
             <div class="nav-card-title">${escapeHtml(title)}</div>
             <div class="nav-card-desc">${escapeHtml(desc)}</div>
           </div>
+          <button class="fav-btn ${isFav ? 'active' : ''}" data-id="${link.id}" title="${isFav ? '取消收藏' : '加入收藏'}" style="position: absolute; top: 8px; right: 8px; background: none; border: none; cursor: pointer; font-size: 1.2rem; opacity: ${isFav ? '1' : '0.2'}; transition: opacity 0.2s;">
+            ⭐
+          </button>
         `;
+        
+        // 卡片点击统计
+        cardEl.addEventListener('click', (e) => {
+          // 如果点击的是收藏按钮，拦截默认行为
+          if (e.target.closest('.fav-btn')) {
+            e.preventDefault();
+            toggleFavorite(link.id);
+            return;
+          }
+          // 正常点击触发异步统计（加锁防抖）
+          if (!clickSet.has(link.id)) {
+            clickSet.add(link.id);
+            fetch(`/api/public/click/${link.id}`, { method: 'POST' }).catch(()=>{});
+            setTimeout(() => clickSet.delete(link.id), 5000); // 5秒内同链接不重复统计
+          }
+        });
+        
         grid.appendChild(cardEl);
         cardIndex++;
       });
@@ -319,6 +375,23 @@
         </div>
       `;
     }
+  }
+
+  // ========== 切换收藏状态 ==========
+  function toggleFavorite(id) {
+    const index = favorites.indexOf(id);
+    if (index === -1) {
+      favorites.push(id);
+    } else {
+      favorites.splice(index, 1);
+      // 如果当前正处于 favorites 标签下，且删空了，切换回 all
+      if (currentCategory === 'favorites' && favorites.length === 0) {
+        currentCategory = 'all';
+      }
+    }
+    localStorage.setItem('biao-nav-favorites', JSON.stringify(favorites));
+    renderCategories();
+    renderNavGrid();
   }
 
   // ========== 全局 Favicon 加载错误处理 ==========

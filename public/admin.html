@@ -73,6 +73,31 @@
             <div class="stat-card-value" id="statLinks">0</div>
             <div class="stat-card-label">链接数量</div>
           </div>
+          <div class="stat-card">
+            <div class="stat-card-icon">🔥</div>
+            <div class="stat-card-value" id="statClicks">0</div>
+            <div class="stat-card-label">总点击量</div>
+          </div>
+        </div>
+
+        <div class="dashboard-tables" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg); margin-top: var(--space-xl);">
+          <!-- 分类统计 -->
+          <div class="dashboard-card" style="background: var(--bg-secondary); padding: var(--space-lg); border-radius: var(--radius-lg);">
+            <h3 style="margin-bottom: var(--space-md);">📁 分类规模分布</h3>
+            <table class="data-table">
+              <thead><tr><th style="text-align:left;">分类名称</th><th style="text-align:right;">链接数量</th></tr></thead>
+              <tbody id="catStatsBody"></tbody>
+            </table>
+          </div>
+
+          <!-- 热门链接 -->
+          <div class="dashboard-card" style="background: var(--bg-secondary); padding: var(--space-lg); border-radius: var(--radius-lg);">
+            <h3 style="margin-bottom: var(--space-md);">🔥 Top 10 点击排行</h3>
+            <table class="data-table">
+              <thead><tr><th style="text-align:left;">链接名称</th><th style="text-align:right;">点击量</th></tr></thead>
+              <tbody id="topLinksBody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -107,6 +132,7 @@
               <option value="">全部分类</option>
             </select>
             <button class="btn btn-primary" id="addLinkBtn">+ 新增链接</button>
+            <button class="btn btn-outline" id="checkLinksBtn" title="检查所有链接是否可访问">🔎 健康检测</button>
           </div>
         </div>
         <p style="color:var(--text-muted);font-size:var(--font-size-sm);margin-bottom:var(--space-md);">💡 拖拽行可调整排序</p>
@@ -119,7 +145,8 @@
               <th>分类</th>
               <th>URL</th>
               <th>排序</th>
-              <th>操作</th>
+              <th>访问 / 点击</th>
+              <th style="text-align: right;">操作</th>
             </tr>
           </thead>
           <tbody id="linksBody"></tbody>

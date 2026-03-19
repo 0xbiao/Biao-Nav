@@ -118,6 +118,38 @@
       links = linkData.data || [];
       document.getElementById('statCategories').textContent = categories.length;
       document.getElementById('statLinks').textContent = links.length;
+
+      // 统计总点击量
+      const totalClicks = links.reduce((sum, link) => sum + (link.click_count || 0), 0);
+      const statClicksEl = document.getElementById('statClicks');
+      if (statClicksEl) statClicksEl.textContent = totalClicks;
+
+      // 分类规模分布
+      const catCountMap = {};
+      links.forEach(l => {
+        catCountMap[l.category_id] = (catCountMap[l.category_id] || 0) + 1;
+      });
+      const catStatsBody = document.getElementById('catStatsBody');
+      if (catStatsBody) {
+        catStatsBody.innerHTML = categories.map(cat => `
+          <tr>
+            <td>${cat.icon} ${escapeHtml(cat.name_zh)}</td>
+            <td style="text-align:right;">${catCountMap[cat.id] || 0}</td>
+          </tr>
+        `).join('');
+      }
+
+      // Top 10 点击排行
+      const topLinks = [...links].sort((a, b) => (b.click_count || 0) - (a.click_count || 0)).slice(0, 10);
+      const topLinksBody = document.getElementById('topLinksBody');
+      if (topLinksBody) {
+        topLinksBody.innerHTML = topLinks.map(link => `
+          <tr>
+            <td>${escapeHtml(link.title_zh)}</td>
+            <td style="text-align:right;">${link.click_count || 0}</td>
+          </tr>
+        `).join('');
+      }
     } catch (err) {
       if (err.message !== 'Unauthorized') showToast('加载仪表盘数据失败', 'error');
     }
@@ -216,6 +248,39 @@
   // ========== 链接管理 ==========
   function initLinkFilter() {
     document.getElementById('linkCategoryFilter')?.addEventListener('change', () => renderLinksTable());
+    
+    // 健康检测逻辑
+    document.getElementById('checkLinksBtn')?.addEventListener('click', async () => {
+      const btn = document.getElementById('checkLinksBtn');
+      if (btn.disabled) return;
+      btn.disabled = true;
+      btn.textContent = '👀 检测中...';
+      
+      let healthy = 0, error = 0;
+      
+      for (const link of links) {
+        const cell = document.getElementById(`health-cell-${link.id}`);
+        if (cell) cell.innerHTML = '🔄 <span style="font-size:0.8em;color:var(--text-muted);">检测中</span>';
+        
+        try {
+          const res = await apiRequest('/health/check', 'POST', { url: link.url });
+          if (res.ok) {
+            if (cell) cell.innerHTML = '✅ <span style="color:var(--success, #10b981);font-size:0.8em;">正常</span>';
+            healthy++;
+          } else {
+            if (cell) cell.innerHTML = `❌ <span style="color:var(--danger, #ef4444);font-size:0.8em;" title="状态码: ${res.status}">异常</span>`;
+            error++;
+          }
+        } catch(e) {
+          if (cell) cell.innerHTML = '❌ <span style="color:var(--danger, #ef4444);font-size:0.8em;" title="无法连接">异常</span>';
+          error++;
+        }
+      }
+      
+      btn.textContent = '🔎 健康检测';
+      btn.disabled = false;
+      showToast(`检测完毕：正常 ${healthy} 个，异常 ${error} 个`, error > 0 ? 'warning' : 'success');
+    });
   }
 
   async function loadLinks() {
@@ -268,6 +333,7 @@
         <td>${escapeHtml(link.category_name_zh || '-')}</td>
         <td><a href="${escapeHtml(link.url)}" target="_blank" style="color:var(--accent-primary);word-break:break-all;">${truncate(link.url, 25)}</a></td>
         <td>${link.sort_order}</td>
+        <td class="link-status-cell" id="health-cell-${link.id}">${link.click_count || 0}</td>
         <td class="actions">
           <button class="btn btn-secondary btn-sm" onclick="editLink(${link.id})">编辑</button>
           <button class="btn btn-danger btn-sm" onclick="deleteLink(${link.id}, '${escapeHtml(link.title_zh)}')">删除</button>
